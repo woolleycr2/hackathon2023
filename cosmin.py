@@ -93,3 +93,5 @@ while True:
 # Release the camera and close all windows
 cap.release()
 cv2.destroyAllWindows()
+
+## https://github.com/italojs/facial-landmarks-recognition/blob/master/shape_predictor_68_face_landmarks.dat
