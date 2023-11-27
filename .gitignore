@@ -1,6 +1,3 @@
 README.md
-bin/
-lib/
-lib64
-include/
-pyvenv.cfg
+.venv
+.gitignore
