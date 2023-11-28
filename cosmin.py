@@ -13,17 +13,17 @@ ochi_inchisi = None
 # Detectare faciala cu ajutorul librariei dlib
 face_detector = dlib.get_frontal_face_detector()
 
-# Path to the shape_predictor_68_face_landmarks.dat file
+# Locatia din care se incarca landmark-urile faciale
 dlib_facelandmark = dlib.shape_predictor(r"C:\\Users\\Claudia\\Desktop\\test\\shape_predictor_68_face_landmarks.dat")
 
-# Function to calculate the aspect ratio for the eyes
-def Detect_Eye(eye):
+# Functia care calculeaza raportul de aspect al ochilor (Ratio)
+def Detectare_ochi(eye):
     if len(eye) == 6:
         poi_A = distance.euclidean(eye[1], eye[5])
         poi_B = distance.euclidean(eye[2], eye[4])
         poi_C = distance.euclidean(eye[0], eye[3])
-        aspect_ratio_Eye = (poi_A + poi_B) / (2 * poi_C)
-        return aspect_ratio_Eye
+        aspect_ratio_ochi = (poi_A + poi_B) / (2 * poi_C)
+        return aspect_ratio_ochi
     else:
         return 0  # or any other default value
 
@@ -68,8 +68,8 @@ while True:
             cv2.line(frame, (x, y), (x2, y2), (255, 255, 0), 1)
 
         # Calculate aspect ratio for left and right eye
-        right_Eye = Detect_Eye(rightEye)
-        left_Eye = Detect_Eye(leftEye)
+        right_Eye = Detectare_ochi(rightEye)
+        left_Eye = Detectare_ochi(leftEye)
         Eye_Rat = (left_Eye + right_Eye) / 2
 
         # Round off the value of the average mean of right and left eyes
@@ -94,4 +94,5 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
+## Sursa pentru fisierul .dat cu landmark-uri 
 ## https://github.com/italojs/facial-landmarks-recognition/blob/master/shape_predictor_68_face_landmarks.dat
