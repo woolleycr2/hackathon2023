@@ -26,6 +26,16 @@ def Detectare_ochi(eye):
         return aspect_ratio_ochi
     else:
         return 0  # or any other default value
+    
+def Detectare_gura(mouth):
+    if len(mouth) == 12:
+        poi_A = distance.euclidean(mouth[2], mouth[10])
+        poi_B = distance.euclidean(mouth[4], mouth[8])
+        poi_C = distance.euclidean(mouth[0], mouth[6])
+        aspect_ratio_gura = (poi_A + poi_B) / (2 * poi_C)
+        return aspect_ratio_gura
+    else:
+        return 0  # or any other default value
 
 # Main loop
 while True:
@@ -42,6 +52,7 @@ while True:
         face_landmarks = dlib_facelandmark(gray_scale, face)
         leftEye = []
         rightEye = []
+        gura = []
 
         # Left eye points (42 to 47)
         for n in range(42, 48):
@@ -67,15 +78,31 @@ while True:
             y2 = face_landmarks.part(next_point).y
             cv2.line(frame, (x, y), (x2, y2), (255, 255, 0), 1)
 
+        # Landmark-uri pentru gura incep de la (48 - 59)
+        for n in range(48, 60):
+            x = face_landmarks.part(n).x
+            y = face_landmarks.part(n).y
+            gura.append((x, y))
+            next_point = n + 1
+            if n == 59:
+                next_point = 48
+            x2 = face_landmarks.part(next_point).x
+            y2 = face_landmarks.part(next_point).y
+            cv2.line(frame, (x, y), (x2, y2), (0, 0, 255), 1)
+
         # Calculate aspect ratio for left and right eye
         right_Eye = Detectare_ochi(rightEye)
         left_Eye = Detectare_ochi(leftEye)
         Eye_Rat = (left_Eye + right_Eye) / 2
+        gura = Detectare_gura(gura)
 
         # Round off the value of the average mean of right and left eyes
         Eye_Rat = round(Eye_Rat, 2)
 
         # Threshold for drowsiness detection
+        if gura > 0.5:
+            cv2.putText(frame, "Cascare detectata", (30, 40),
+                        cv2.FONT_HERSHEY_PLAIN, 2, (21, 56, 210), 3)
         if Eye_Rat <= 0.160:
             cv2.putText(frame, "Trezeste-te!", (50, 450),
                         cv2.FONT_HERSHEY_PLAIN, 2, (21, 56, 212), 3)
