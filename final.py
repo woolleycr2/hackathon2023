@@ -44,13 +44,17 @@ mouth_alert_start_time = 0
 
 eyes_mouth_active = False
 eyes_mouth_start_time = 0
+
 # Bucla principala
 while True:
     ret, frame = cap.read()
 
     if not ret:
         break
-
+    #frame = imutils.resize(frame, width=450)
+    cv2.putText(frame, "Status:", (10, 470),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    
     gray_scale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     faces = face_detector(gray_scale)
@@ -84,7 +88,7 @@ while True:
         ## citire valori pentru teste
         print("Ochi")
         print(eye_ratio)
-
+        
         # Prag pentru detectarea somnolentei
         if mouth_ratio > 0.50 and eye_ratio <= 0.20:
             # If the alert is not active, start the timer
@@ -94,8 +98,8 @@ while True:
 
             # Check if the alert duration has passed
             if time.time() - eyes_mouth_active >= alert_duration:
-                cv2.putText(frame, "Cascare Ochi inchisi", (30, 40),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (21, 56, 210), 3)
+                cv2.putText(frame, "Adormit", (90, 470),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (21, 56, 210), 2)
                 
         if eye_ratio <= 0.20 and mouth_ratio < 0.50:
             # If the alert is not active, start the timer
@@ -105,8 +109,8 @@ while True:
 
             # Check if the alert duration has passed
             if time.time() - eye_alert_start_time >= alert_duration:
-                cv2.putText(frame, "Ochi inchisi", (30, 60),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (21, 56, 210), 3)
+                cv2.putText(frame, "Obosit", (90, 470),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
         else:
             # Reset the alert if eyes are open
             eye_alert_active = False
@@ -119,8 +123,8 @@ while True:
 
             # Check if the alert duration has passed
             if time.time() - mouth_alert_start_time >= alert_duration:
-                cv2.putText(frame, "Cascare detectata", (30, 40),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (21, 56, 210), 3)
+                cv2.putText(frame, "Obosit", (90, 470),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
         else:
             # Reset the alert if mouth is closed
             mouth_alert_active = False
