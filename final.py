@@ -45,6 +45,8 @@ mouth_alert_start_time = 0
 eyes_mouth_active = False
 eyes_mouth_start_time = 0
 
+contor_cascat = 0
+
 # Bucla principala
 while True:
     ret, frame = cap.read()
@@ -54,7 +56,12 @@ while True:
     #frame = imutils.resize(frame, width=450)
     cv2.putText(frame, "Status:", (10, 470),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    
+    if contor_cascat >= 15 and contor_cascat < 40:
+                cv2.putText(frame, "Pauza recomandata", (10, 450),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 255), 2)
+    if contor_cascat >= 40:
+                cv2.putText(frame, "Opriti vehiculul intr-un loc sigur!", (10, 445),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 255), 2)
     gray_scale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     faces = face_detector(gray_scale)
@@ -92,7 +99,7 @@ while True:
         # Prag pentru detectarea somnolentei
         if mouth_ratio > 0.50 and eye_ratio <= 0.20:
             # If the alert is not active, start the timer
-            if not mouth_alert_active and eye_alert_active:
+            if not mouth_alert_active and not eye_alert_active:
                 eyes_mouth_start_time = time.time()
                 eyes_mouth_active = True
 
@@ -109,7 +116,7 @@ while True:
 
             # Check if the alert duration has passed
             if time.time() - eye_alert_start_time >= alert_duration:
-                cv2.putText(frame, "Obosit", (90, 470),
+                cv2.putText(frame, "Adormit", (90, 470),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
         else:
             # Reset the alert if eyes are open
@@ -125,6 +132,8 @@ while True:
             if time.time() - mouth_alert_start_time >= alert_duration:
                 cv2.putText(frame, "Obosit", (90, 470),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
+                contor_cascat += 1
+                
         else:
             # Reset the alert if mouth is closed
             mouth_alert_active = False
