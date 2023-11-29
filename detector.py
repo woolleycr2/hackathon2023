@@ -7,20 +7,23 @@ from tkinter import ttk
 from tkinter import *
 from PIL import Image, ImageTk
 
-# Watermark Setari
-watermark_text = "505EXY!"  # Schimbă cu textul dorit
+# Setări pentru Watermark
+text_watermark = "505EXY!"  # Schimbă cu textul dorit
 font = cv2.FONT_HERSHEY_COMPLEX
 font_scale = 0.7
 font_thickness = 2
 font_color = (255, 255, 255)  # Alb
 
 # Clasa pentru aplicația de detectare a oboselii
-class DrowsinessDetectorApp:
+class AplicatieDetectorOboseala:
     def __init__(self, root):
         self.root = root
         self.root.title("Detector de Oboseala")
         self.root.configure(bg="black")
-
+        
+        # Contor pentru oboseala acumulata de catre sofer 
+        
+        self.contor_oboseala = 0
         # Inițializare captură video
         self.cap = cv2.VideoCapture(0)
         self.paused = False
@@ -66,20 +69,23 @@ class DrowsinessDetectorApp:
         image_frame.pack(side="bottom")
 
         # Adaugă label pentru imaginea de fundal
-        self.background_label = Label(image_frame, image=self.background_image,borderwidth=0, highlightthickness=0)
+        self.background_label = Label(image_frame, image=self.background_image, borderwidth=0, highlightthickness=0)
         self.background_label.pack()
 
-        #Variabile cod nou
-        # Duration for the alert to persist (in seconds)
+        # Variabile cod nou
+        # Durata pentru afișarea alertei (în secunde)
         self.alert_duration = 2.0
 
-        # Variables for eye and mouth alerts
-        self.eye_alert_active = False
-        self.mouth_alert_active = False
-        self.eyes_mouth_active = False
-        self.eye_alert_start_time = 0
-        self.mouth_alert_start_time = 0
-        self.eyes_mouth_start_time = 0
+        # Variabile pentru alerte la închiderea ochilor și a gurii
+        self.alert_ochi_active = False
+        self.alert_gura_active = False
+        self.alert_ochi_gura_active = False
+        self.alert_ochi_start_time = 0
+        self.alert_gura_start_time = 0
+        self.alert_ochi_gura_start_time = 0
+
+        # Variabilă pentru întârzierea dintre cadre (în milisecunde)
+        self.frame_delay = 1  # Setează întârzierea dorită în milisecunde
 
         # Inițializare buclă principală
         self.update()
@@ -98,13 +104,26 @@ class DrowsinessDetectorApp:
         self.cap.release()
         self.root.destroy()
 
+    # Variabila de detectare a oboselii 
+    
+    
     # Metodă pentru detectarea oboselii într-un frame
     def detect_drowsiness(self, frame):
         gray_scale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_detector(gray_scale)
         cv2.putText(frame, "Status:", (10, 470),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
+        if self.contor_oboseala >= 15 and self.contor_oboseala < 40:
+                cv2.putText(frame, "Pauza recomandata", (10, 420),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 255), 2)
+        if self.contor_oboseala >= 40:
+                cv2.putText(frame, "Opriti vehiculul intr-un loc sigur!", (10, 420),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 255), 2)
+        cv2.putText(frame, "Oboseala acumulata:", (10, 445),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(frame, str(self.contor_oboseala), (250, 445),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
         for face in faces:
             face_landmarks = dlib_facelandmark(gray_scale, face)
             ochi_si_gura = {'leftEye': [], 'rightEye': [], 'mouth': []}
@@ -122,43 +141,49 @@ class DrowsinessDetectorApp:
                     y2 = face_landmarks.part(next_point).y
                     cv2.line(frame, (x, y), (x2, y2), color, 1)
 
-            right_eye_ratio = Detectare_ochi(ochi_si_gura['rightEye'])
-            left_eye_ratio = Detectare_ochi(ochi_si_gura['leftEye'])
-            eye_ratio = (left_eye_ratio + right_eye_ratio) / 2
-            mouth_ratio = Detectare_gura(ochi_si_gura['mouth'])
+            aspect_ratio_ochi_drept = Detectare_ochi(ochi_si_gura['rightEye'])
+            aspect_ratio_ochi_stang = Detectare_ochi(ochi_si_gura['leftEye'])
+            aspect_ratio_ochi = (aspect_ratio_ochi_stang + aspect_ratio_ochi_drept) / 2
+            aspect_ratio_gura = Detectare_gura(ochi_si_gura['mouth'])
 
-            eye_ratio = round(eye_ratio, 2)
+            aspect_ratio_ochi = round(aspect_ratio_ochi, 2)
 
-            if mouth_ratio > 0.50 and eye_ratio <= 0.20:
-                if not self.eyes_mouth_active:
-                    self.eyes_mouth_start_time = time.time()
-                    self.eyes_mouth_active = True
+            if aspect_ratio_gura > 0.50 and aspect_ratio_ochi <= 0.20:
+                if not self.alert_ochi_gura_active:
+                    self.alert_ochi_gura_start_time = time.time()
+                    self.alert_ochi_gura_active = True
 
-                if time.time() - self.eyes_mouth_start_time >= self.alert_duration:
+                if time.time() - self.alert_ochi_gura_start_time >= self.alert_duration:
                     cv2.putText(frame, "Adormit", (90, 470),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (21, 56, 210), 2)
+                    if self.contor_oboseala <= 40:
+                        self.contor_oboseala += 40
 
-            if eye_ratio <= 0.20 and mouth_ratio < 0.50:
-                if not self.eye_alert_active:
-                    self.eye_alert_start_time = time.time()
-                    self.eye_alert_active = True
+            if aspect_ratio_ochi <= 0.20 and aspect_ratio_gura < 0.50:
+                if not self.alert_ochi_active:
+                    self.alert_ochi_start_time = time.time()
+                    self.alert_ochi_active = True
 
-                if time.time() - self.eye_alert_start_time >= self.alert_duration:
+                if time.time() - self.alert_ochi_start_time >= self.alert_duration:
                     cv2.putText(frame, "Adormit", (90, 470),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
+                    if self.contor_oboseala <= 40:
+                        self.contor_oboseala += 20
             else:
-                self.eye_alert_active = False
+                self.alert_ochi_active = False
 
-            if mouth_ratio > 0.50 and eye_ratio > 0.20:
-                if not self.mouth_alert_active:
-                    self.mouth_alert_start_time = time.time()
-                    self.mouth_alert_active = True
+            if aspect_ratio_gura > 0.50 and aspect_ratio_ochi > 0.20:
+                if not self.alert_gura_active:
+                    self.alert_gura_start_time = time.time()
+                    self.alert_gura_active = True
 
-                if time.time() - self.mouth_alert_start_time >= self.alert_duration:
+                if time.time() - self.alert_gura_start_time >= self.alert_duration:
                     cv2.putText(frame, "Obosit", (90, 470),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (21, 56, 210), 2)
+                    if self.contor_oboseala <= 40:
+                        self.contor_oboseala += 1
             else:
-                self.mouth_alert_active = False
+                self.alert_gura_active = False
 
         return frame
 
@@ -170,11 +195,11 @@ class DrowsinessDetectorApp:
                 frame_with_detection = self.detect_drowsiness(frame)
 
                 # Adaugă watermark text în colțul dreapta jos
-                text_size = cv2.getTextSize(watermark_text, font, font_scale, font_thickness)[0]
+                text_size = cv2.getTextSize(text_watermark, font, font_scale, font_thickness)[0]
                 text_x = frame_with_detection.shape[1] - text_size[0] - 10
                 text_y = frame_with_detection.shape[0] - 10
 
-                cv2.putText(frame_with_detection, watermark_text, (text_x, text_y),
+                cv2.putText(frame_with_detection, text_watermark, (text_x, text_y),
                         font, font_scale, font_color, font_thickness)
 
                 frame_with_detection = cv2.cvtColor(frame_with_detection, cv2.COLOR_BGR2RGB)
@@ -182,24 +207,25 @@ class DrowsinessDetectorApp:
                 frame_with_detection = ImageTk.PhotoImage(frame_with_detection)
                 self.video_frame.imgtk = frame_with_detection
                 self.video_frame.configure(image=frame_with_detection)
-        self.root.after(10, self.update)
 
-def Detectare_ochi(eye):
-    if len(eye) == 6:
-        poi_A = distance.euclidean(eye[1], eye[5])
-        poi_B = distance.euclidean(eye[2], eye[4])
-        poi_C = distance.euclidean(eye[0], eye[3])
-        aspect_ratio_ochi = (poi_A + poi_B) / (2 * poi_C)
+        self.root.after(self.frame_delay, self.update)  # Programarea următoarei actualizări cu o întârziere
+
+def Detectare_ochi(ochi):
+    if len(ochi) == 6:
+        punct_A = distance.euclidean(ochi[1], ochi[5])
+        punct_B = distance.euclidean(ochi[2], ochi[4])
+        punct_C = distance.euclidean(ochi[0], ochi[3])
+        aspect_ratio_ochi = (punct_A + punct_B) / (2 * punct_C)
         return aspect_ratio_ochi
     else:
-        return 0  # or any other default value
+        return 0  # sau orice altă valoare implicită
     
-def Detectare_gura(mouth):
-    if len(mouth) == 12:
-        poi_A = distance.euclidean(mouth[2], mouth[10])
-        poi_B = distance.euclidean(mouth[4], mouth[8])
-        poi_C = distance.euclidean(mouth[0], mouth[6])
-        aspect_ratio_gura = (poi_A + poi_B) / (2 * poi_C)
+def Detectare_gura(gura):
+    if len(gura) == 12:
+        punct_A = distance.euclidean(gura[2], gura[10])
+        punct_B = distance.euclidean(gura[4], gura[8])
+        punct_C = distance.euclidean(gura[0], gura[6])
+        aspect_ratio_gura = (punct_A + punct_B) / (2 * punct_C)
         return aspect_ratio_gura
     else:
         return 0  # sau orice altă valoare implicită
@@ -215,7 +241,7 @@ timp_inchis = 2
 face_detector = dlib.get_frontal_face_detector()
 
 # Locația de unde se încarcă punctele de referință faciale (landmark-urile)
-dlib_facelandmark = dlib.shape_predictor(r"shape_predictor_68_face_landmarks.dat")
+dlib_facelandmark = dlib.shape_predictor(r"C:\\Users\\Claudia\\Desktop\\test\\shape_predictor_68_face_landmarks.dat")
 
 def main():
     # Crearea ferestrei principale
@@ -224,7 +250,7 @@ def main():
     root.configure(bg="black")
 
     # Inițializarea aplicației
-    app = DrowsinessDetectorApp(root)
+    app = AplicatieDetectorOboseala(root)
 
     # Pornirea buclei principale a ferestrei
     root.mainloop()
