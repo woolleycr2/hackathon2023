@@ -7,7 +7,7 @@ from tkinter import ttk
 from tkinter import *
 from PIL import Image, ImageTk
 
-# Setări pentru Watermark
+# Setări pentru Watermark #
 text_watermark = "505EXY!"  # Schimbă cu textul dorit
 font = cv2.FONT_HERSHEY_COMPLEX
 font_scale = 0.7
