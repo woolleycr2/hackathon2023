@@ -7,76 +7,72 @@ from tkinter import ttk
 from tkinter import *
 from PIL import Image, ImageTk
 
-# Setări pentru Watermark #
-text_watermark = "505EXY!"  # Schimbă cu textul dorit
+# Watermark Settings #
+text_watermark = "505EXY!"
 font = cv2.FONT_HERSHEY_COMPLEX
 font_scale = 0.7
 font_thickness = 2
-font_color = (255, 255, 255)  # Alb
+font_color = (255, 255, 255)  # White
 
-# Clasa pentru aplicația de detectare a oboselii
+# Class for Drowsiness Detection App
 class AplicatieDetectorOboseala:
     def __init__(self, root):
         self.root = root
         self.root.title("Detector de Oboseala")
-        self.root.configure(bg="black")
-        
-        # Contor pentru oboseala acumulata de catre sofer 
-        
+        self.root.configure(bg="black")   
         self.contor_oboseala = 0
-        # Inițializare captură video
+
+        # Video Init
         self.cap = cv2.VideoCapture(0)
         self.paused = False
 
-        # Blank Label (spatiu intre grid si titlu)
+        # Blank Label (space between grid and title)
         self.label_sus = ttk.Label(root, background="black")
         self.label_sus.pack(pady=0)
 
-        # Etichetă pentru titlul aplicației
+        # Title Label
         self.label = ttk.Label(root, text="Detector de Oboseala", font=("Times New Roman", 20, "bold"), background="black", foreground="white")
         self.label.pack(pady=5)
 
-        # Cadru pentru afișarea imaginii video
+        # Video Label
         self.video_frame = ttk.Label(root)
         self.video_frame.pack(pady=5)
 
-        # Linie pentru aranjarea butoanelor
+        # Line for Buttons
         button_frame = ttk.Frame(root, padding="5")
         button_frame.pack()
 
-        # Butoanele de pornire și oprire
+        # On/Off Buttons
         self.start_button = ttk.Button(button_frame, text="Start", command=self.start_detection)
         self.start_button.pack(side="left", padx=3)
 
         self.stop_button = ttk.Button(button_frame, text="Stop", command=self.stop_detection)
         self.stop_button.pack(side="left", padx=3)
 
-        # Linie Buton Close
+        # Line Close Button
         close_frame = ttk.Frame(root, padding="4")
         close_frame.pack()
 
-        # Buton pentru închiderea aplicației
+        # Close Button
         self.close_button = ttk.Button(close_frame, text="Închide", command=self.close)
         self.close_button.pack(pady=0)
 
-        # Încarcă imaginea și redimensionează-o
-        watermark_image = Image.open("logo.png")  # înlocuiește cu calea ta
+        # Watermark Image
+        watermark_image = Image.open("logo.png")
 
         self.background_image = ImageTk.PhotoImage(watermark_image)
 
-        # Afișează imaginea sub butoane într-un frame separat
+        # Watermark Frame
         image_frame = Frame(root)
         image_frame.pack(side="bottom")
 
-        # Adaugă label pentru imaginea de fundal
         self.background_label = Label(image_frame, image=self.background_image, borderwidth=0, highlightthickness=0)
         self.background_label.pack()
 
-        # Variabile cod nou
-        # Durata pentru afișarea alertei (în secunde)
+        # Show alert time duration (2 seconds)
         self.alert_duration = 2.0
 
-        # Variabile pentru alerte la închiderea ochilor și a gurii
+        # Variables for closed eyes/mouth alerts
         self.alert_ochi_active = False
         self.alert_gura_active = False
         self.alert_ochi_gura_active = False
@@ -84,30 +80,22 @@ class AplicatieDetectorOboseala:
         self.alert_gura_start_time = 0
         self.alert_ochi_gura_start_time = 0
 
-        # Variabilă pentru întârzierea dintre cadre (în milisecunde)
-        self.frame_delay = 1  # Setează întârzierea dorită în milisecunde
+        # Delay
+        self.frame_delay = 1
 
-        # Inițializare buclă principală
         self.update()
 
-    # Metodă pentru pornirea detecției
     def start_detection(self):
         self.paused = False
     
-    # Metodă pentru oprirea detecției
     def stop_detection(self):
         self.paused = True
 
-    # Metodă pentru închiderea aplicației
     def close(self):
-        # Eliberare resurse camera
         self.cap.release()
         self.root.destroy()
-
-    # Variabila de detectare a oboselii 
     
-    
-    # Metodă pentru detectarea oboselii într-un frame
+    # Drowsiness detection function
     def detect_drowsiness(self, frame):
         gray_scale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_detector(gray_scale)
@@ -187,14 +175,14 @@ class AplicatieDetectorOboseala:
 
         return frame
 
-    # Metodă pentru actualizarea imaginii în timp real
+    # Update the image in real time
     def update(self):
         if not self.paused:
             ret, frame = self.cap.read()
             if ret:
                 frame_with_detection = self.detect_drowsiness(frame)
 
-                # Adaugă watermark text în colțul dreapta jos
+                # Add Watermark
                 text_size = cv2.getTextSize(text_watermark, font, font_scale, font_thickness)[0]
                 text_x = frame_with_detection.shape[1] - text_size[0] - 10
                 text_y = frame_with_detection.shape[0] - 10
@@ -208,7 +196,7 @@ class AplicatieDetectorOboseala:
                 self.video_frame.imgtk = frame_with_detection
                 self.video_frame.configure(image=frame_with_detection)
 
-        self.root.after(self.frame_delay, self.update)  # Programarea următoarei actualizări cu o întârziere
+        self.root.after(self.frame_delay, self.update)
 
 def Detectare_ochi(ochi):
     if len(ochi) == 6:
@@ -218,7 +206,7 @@ def Detectare_ochi(ochi):
         aspect_ratio_ochi = (punct_A + punct_B) / (2 * punct_C)
         return aspect_ratio_ochi
     else:
-        return 0  # sau orice altă valoare implicită
+        return 0
     
 def Detectare_gura(gura):
     if len(gura) == 12:
@@ -228,31 +216,29 @@ def Detectare_gura(gura):
         aspect_ratio_gura = (punct_A + punct_B) / (2 * punct_C)
         return aspect_ratio_gura
     else:
-        return 0  # sau orice altă valoare implicită
+        return 0
 
-# Indexarea camerei video
+# Camera Index
 cap = cv2.VideoCapture(0)
 
-# Variabilă pentru temporizatorul ochilor închiși
+# Closed Eyes Variable
 ochi_inchisi = None
 timp_inchis = 2
 
-# Detectarea facială cu ajutorul bibliotecii dlib
 face_detector = dlib.get_frontal_face_detector()
 
-# Locația de unde se încarcă punctele de referință faciale (landmark-urile)
-dlib_facelandmark = dlib.shape_predictor(r"C:\\Users\\Claudia\\Desktop\\test\\shape_predictor_68_face_landmarks.dat")
+# .dat Landmarks file path
+dlib_facelandmark = dlib.shape_predictor(r"shape_predictor_68_face_landmarks.dat")
 
 def main():
-    # Crearea ferestrei principale
+    # Main Window
     root = tk.Tk()
     root.geometry("800x720")
     root.configure(bg="black")
 
-    # Inițializarea aplicației
+    # Start App
     app = AplicatieDetectorOboseala(root)
 
-    # Pornirea buclei principale a ferestrei
     root.mainloop()
 
 if __name__ == "__main__":
