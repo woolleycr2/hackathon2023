@@ -60,7 +60,7 @@ class AplicatieDetectorOboseala:
         self.close_button.pack(pady=0)
 
         # Încarcă imaginea și redimensionează-o
-        watermark_image = Image.open("logo2.png")  # înlocuiește cu calea ta
+        watermark_image = Image.open("logo.png")  # înlocuiește cu calea ta
 
         self.background_image = ImageTk.PhotoImage(watermark_image)
 
